@@ -9,6 +9,8 @@
 #include "behaviortree_cpp/behavior_tree.h"
 #include "behaviortree_cpp/bt_factory.h"
 
+#include <ros2_behavior_tree_example/bt_parameters.hpp>
+
 namespace polymath
 {
 namespace bt_ros_example
@@ -106,6 +108,8 @@ protected:
     BT::Blackboard::Ptr blackboard_;
     BT::Tree tree_;
     BT::BehaviorTreeFactory factory_;
+    std::shared_ptr<bt_params::ParamListener> param_listener_{nullptr};
+    bt_params::Params params_;
 };
 }
 }

@@ -15,22 +15,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(rclcpp_components REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
-find_package(nav2_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(Boost COMPONENTS coroutine QUIET)
 
-set(dependencies 
+set(THIS_PACKAGE_DEPS
+  generate_parameter_library
+  behaviortree_cpp
   rclcpp
   rclcpp_action
   rclcpp_lifecycle
@@ -41,7 +30,18 @@ set(dependencies
   nav2_msgs
   std_srvs
   tf2_ros
-  behaviortree_cpp
+)
+
+# for each dependency, find and include the package
+foreach(DEPENDENCY ${THIS_PACKAGE_DEPS})
+  find_package(${DEPENDENCY} REQUIRED)
+endforeach()
+
+find_package(Boost COMPONENTS coroutine QUIET)
+
+generate_parameter_library(
+  bt_parameters
+  config/parameters.yaml
 )
 
 set(executable_name behavior_tree_example)
@@ -69,16 +69,25 @@ include_directories(
 
 ament_target_dependencies(
   ${executable_name}
-  ${dependencies}
+  ${THIS_PACKAGE_DEPS}
 )
 
-target_link_libraries(${executable_name} ${library_name})
+target_link_libraries(${executable_name} ${library_name} bt_parameters)
 
-ament_target_dependencies(${library_name}
-  ${dependencies}
+ament_target_dependencies(
+  ${library_name}
+  ${THIS_PACKAGE_DEPS}
 )
 
-install(TARGETS ${library_name}
+target_link_libraries(${PROJECT_NAME}  bt_parameters)
+
+#target_include_directories(${PROJECT_NAME} PUBLIC
+#    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#    $<INSTALL_INTERFACE:include>)
+
+install(
+  TARGETS ${library_name} bt_parameters
+  EXPORT ${library_name}Targets
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -106,7 +115,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_targets(${PROJECT_NAME}Targets  HAS_LIBRARY_TARGET)
 ament_export_include_directories(include)
 ament_export_libraries(${library_name})
-ament_export_dependencies(${dependencies})
+ament_export_dependencies(${THIS_PACKAGE_DEPS})
 ament_package()

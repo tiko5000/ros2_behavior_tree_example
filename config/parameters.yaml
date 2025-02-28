@@ -1,0 +1,23 @@
+bt_params:
+    behaviortree_file:
+      type: string
+      default_value: "behavior_trees/ping_pong_no_decorator.xml"
+      description: "Path to the behavior tree file"
+      validation:
+        not_empty<>: []
+    rate_hz:
+      type: double
+      default_value: 10.0
+      description: "Rate in Hz"
+      validation:
+        bounds<>: [0.0, 100.0]
+    num_republish:
+      type: int
+      default_value: 3
+      description: "Number of times to republish the message"
+      validation:
+        bounds<>: [0, 100]
+    ping_starter:
+      type: bool
+      default_value: true
+      description: "Start the ping pong behavior tree"

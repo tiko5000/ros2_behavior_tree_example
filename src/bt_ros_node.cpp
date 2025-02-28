@@ -24,22 +24,26 @@ namespace bt_ros_example
     : rclcpp_lifecycle::LifecycleNode("bt_ros_node", "", options)
     {
         // Get all necesssary params for ros2 to utilize
-        
-        // Rate at which to run our system
-        // Set up parameter descriptor to set up our range and settings
-        auto param_desc = rcl_interfaces::msg::ParameterDescriptor();
-        param_desc.floating_point_range.resize(1);
-        param_desc.floating_point_range[0].from_value = 0.5; 
-        param_desc.floating_point_range[0].to_value = 100;
-        param_desc.floating_point_range[0].step = 0.05;
-        param_desc.description = "Rate in Hz to run behavior tree at";
+        param_listener_ = std::make_shared<bt_params::ParamListener>(this->get_node_parameters_interface());
+        params_ = param_listener_->get_params();
 
-        this->declare_parameter("rate_hz", float_t(30), param_desc);
-        this->declare_parameter("num_republish", int32_t(3));
-        this->declare_parameter("ping_starter", true);
+        // Example for changing a parameter:
+        RCLCPP_INFO(this->get_logger(), "Initial parameter: num_republish = %i", params_.num_republish);
 
-        // Declare the behavior tree default file
-        this->declare_parameter("behaviortree_file", "behavior_trees/ping_pong_no_decorator.xml");
+        std::vector<rclcpp::Parameter> new_params;
+        new_params.emplace_back("num_republish", 9);  // Manually setting new value
+
+        // Apply the update
+        auto result = param_listener_->update(new_params);
+        if (result.successful)
+        {
+            params_ = param_listener_->get_params();
+            RCLCPP_INFO(this->get_logger(), "Manually updated num_republish to: %i", params_.num_republish);
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "Parameter update failed: %s", result.reason.c_str());
+        }
 
         // Register Nodes into the Factory to generate a tree later
         factory_.registerNodeType<PongReceivedNode>("PongReceivedNode");
